@@ -40,11 +40,12 @@ module OmniAuth
         # @raw_info ||= MultiJson.decode(access_token.get('/2/users/get_current_account').body)
       end
 
+      # Fixes regression in omniauth-oauth2 v1.4.0 by https://github.com/omniauth/omniauth-oauth2/commit/85fdbe117c2a4400d001a6368cc359d88f40abc7
       def callback_url
         if @authorization_code_from_signed_request
           ''
         else
-          options[:callback_url] || super
+          options[:callback_url] || (full_host + script_name + callback_path)
         end
       end
     end
