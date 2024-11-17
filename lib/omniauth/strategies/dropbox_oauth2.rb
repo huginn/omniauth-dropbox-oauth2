@@ -3,14 +3,15 @@ require 'omniauth-oauth2'
 module OmniAuth
   module Strategies
     class DropboxOauth2 < OmniAuth::Strategies::OAuth2
-      option :name, "dropbox_oauth2"
-      option :client_options, {
-        :site               => 'https://api.dropbox.com',
-        :authorize_url      => 'https://www.dropbox.com/oauth2/authorize',
-        :token_url          => 'https://api.dropbox.com/oauth2/token'
-      }
+      option :name, 'dropbox_oauth2'
+      option :client_options,
+             site: 'https://api.dropbox.com',
+             authorize_url: 'https://www.dropbox.com/oauth2/authorize',
+             token_url: 'https://api.dropbox.com/oauth2/token'
+      option :authorize_params,
+             token_access_type: 'offline'
 
-      uid { raw_info['uid'] }
+      uid { raw_info['account_id'] }
 
       info do
         {
@@ -25,7 +26,7 @@ module OmniAuth
       end
 
       def raw_info
-        conn = Faraday.new(:url => 'https://api.dropbox.com') do |faraday|
+        conn = Faraday.new(url: 'https://api.dropbox.com') do |faraday|
           faraday.request  :url_encoded             # form-encode POST params
           faraday.response :logger                  # log requests to STDOUT
           faraday.adapter  Faraday.default_adapter  # make requests with Net::HTTP
@@ -37,14 +38,13 @@ module OmniAuth
           req.body = "null"
         end
         @raw_info ||= MultiJson.decode(response.body)
-        # @raw_info ||= MultiJson.decode(access_token.get('/2/users/get_current_account').body)
       end
 
       def callback_url
         if @authorization_code_from_signed_request
           ''
         else
-          options[:callback_url] || super
+          options[:callback_url] || full_host + callback_path
         end
       end
     end
